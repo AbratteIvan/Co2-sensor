@@ -1,0 +1,85 @@
+/*
+   Atmospheric CO2 Level..............400ppm
+   Average indoor co2.............350-450ppm
+   Maxiumum acceptable co2...........1000ppm
+   Dangerous co2 levels.............>2000ppm
+*/
+
+//---------------------------------------------------------------------------------------------------------------
+//                                                  LIBRARIES
+//---------------------------------------------------------------------------------------------------------------
+#include <Wire.h>                             // for OLED
+
+//---------------------------------------------------------------------------------------------------------------
+//                                                   DEFINES
+//---------------------------------------------------------------------------------------------------------------
+#define anInput     A0                        //analog feed from MQ135
+
+#define co2Zero     55                        //calibrated CO2 0 level
+#define led          9                        //led on pin 9
+#define led2         8                        //led on pin 8
+#define buzzer       7                        //buzzer on pin 7
+
+//---------------------------------------------------------------------------------------------------------------
+//                                                  SETUP
+//---------------------------------------------------------------------------------------------------------------
+void setup() {
+
+  pinMode(anInput, INPUT);                    //MQ135 analog feed set for input
+  pinMode(led, OUTPUT);                       //led set for output
+  pinMode(led2, OUTPUT);                       //led set for output
+  pinMode(buzzer, OUTPUT);                       //led set for output
+  Serial.begin(9600);                         //serial comms for debuging
+}
+//---------------------------------------------------------------------------------------------------------------
+//                                               MAIN LOOP
+//---------------------------------------------------------------------------------------------------------------
+void loop() {
+
+  int co2now[20];                              //array for co2 readings
+  int co2raw = 0;                               //raw value of co2
+  int co2comp = 0;                              //compensated co2
+  int co2ppm = 0;                               //calculated ppm
+  int zzz = 0;                                  //averaging
+  
+  for (int x = 0; x < 10; x++) {              //samplpe co2 10 over 0.1 seconds
+    co2now[x] = analogRead(A0);
+    delay(10);
+  }
+
+  for (int x = 0; x < 10; x++) {                //add samples together
+    zzz = zzz + co2now[x];
+
+  }
+  co2raw = zzz / 25;                          //divide samples by 10
+  co2comp = co2raw - co2Zero;                 //get compensated value
+  co2ppm = map(co2comp, 0, 1023, 400, 5000);  //map value for atmospheric levels
+
+ 
+  
+  
+  if (co2ppm > 799) {                         //if co2 ppm > 800
+    delay(5000);
+    if (co2ppm > 799) {
+    digitalWrite(led, HIGH);                  //turn on led
+    for(int i=0; i<5; i++){
+      tone(7,100);
+      delay(250);
+      noTone(7);
+      delay(250);}
+  }
+  }
+  else {                                      //if not
+    digitalWrite(led, LOW);                   //turn off led
+  }
+  if(co2ppm<800){
+    digitalWrite(led2, HIGH);
+    }
+    else{
+      digitalWrite(led2,LOW);
+      }
+  Serial.print("AirQuality=");
+  Serial.print(co2ppm);                        // prints the value read
+  Serial.println(" PPM");
+  delay(50); 
+}
